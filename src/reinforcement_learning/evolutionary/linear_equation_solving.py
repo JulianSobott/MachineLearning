@@ -95,7 +95,7 @@ def solve_equation(equation: Equation):
         fitness_scores = evaluate(population, equation)
         avg_fitness = sum(fitness_scores)/len(population)
         if generation % 1000 == 0:
-            pass
+            print(f"{generation}: avg_fitness={avg_fitness}, num_solutions={len(solutions)}")
         if 0 in fitness_scores:
             fitness_scores_np = np.array(fitness_scores)
             indices = np.where(fitness_scores_np == 0)[0]
@@ -113,5 +113,5 @@ def solve_equation(equation: Equation):
 
 
 if __name__ == '__main__':
-    eq = Equation(57, (1, -2, 3))
+    eq = Equation(57, (1, -2, 3, 1, 2, 7, 3))
     possible_solutions = solve_equation(eq)
