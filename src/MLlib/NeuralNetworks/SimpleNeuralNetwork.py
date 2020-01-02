@@ -14,17 +14,19 @@ public classes
 from typing import List
 import numpy as np
 
+from .activation_functions import reLu
+
 
 class SimpleNeuralNetwork:
 
-    def __init__(self, layers: List[int]):
+    def __init__(self, layers: List[int], activation_functions=None):
         np.random.seed(100)
         self.layers = layers
         self.neurons = [np.zeros(size) for size in self.layers]
         self.weights = [np.random.rand(in_layer, out_layer)
                         for in_layer, out_layer in zip(self.layers[:-1], self.layers[1:])
                         ]
-        self.activation_functions = [reLu for _ in self.layers]
+        self.activation_functions = activation_functions if activation_functions else [reLu for _ in self.layers]
 
     def calc_output(self, in_values: np.ndarray):
         assert in_values.shape == self.neurons[0].shape, f"In values don't match NN input shape: {in_values.shape} vs. " \
@@ -33,18 +35,6 @@ class SimpleNeuralNetwork:
         for layer in range(1, len(self.layers)):
             self.neurons[layer] = np.dot(self.neurons[layer - 1], self.weights[layer - 1])
         return self.neurons[-1]
-
-
-def reLu(values: np.ndarray) -> np.ndarray:
-    return np.maximum(0, values)
-
-
-def sigmoid(values: np.ndarray) -> np.ndarray:
-    return 1 / (1 + np.exp(np.negative(values)))
-
-
-def step(values: np.ndarray) -> np.ndarray:
-    return np.heaviside(values, 0.5)
 
 
 if __name__ == '__main__':
