@@ -14,7 +14,7 @@ public classes
 from typing import List
 import numpy as np
 
-from .activation_functions import reLu
+from MLlib.NeuralNetworks.activation_functions import reLu
 
 
 class SimpleNeuralNetwork:
@@ -26,7 +26,8 @@ class SimpleNeuralNetwork:
         self.weights = [np.random.rand(in_layer, out_layer)
                         for in_layer, out_layer in zip(self.layers[:-1], self.layers[1:])
                         ]
-        self.activation_functions = activation_functions if activation_functions else [reLu for _ in self.layers]
+        self.activation_functions = [None, *activation_functions] if activation_functions else \
+            [reLu for _ in self.layers]
 
     def calc_output(self, in_values: np.ndarray):
         assert in_values.shape == self.neurons[0].shape, f"In values don't match NN input shape: {in_values.shape} vs. " \
@@ -34,7 +35,15 @@ class SimpleNeuralNetwork:
         self.neurons[0] = in_values
         for layer in range(1, len(self.layers)):
             self.neurons[layer] = np.dot(self.neurons[layer - 1], self.weights[layer - 1])
+            self.neurons[layer] = self.activation_functions[layer](self.neurons[layer])
         return self.neurons[-1]
+
+    def copy(self):
+        copy_nn = SimpleNeuralNetwork(self.layers[:], self.activation_functions[:])
+        copy_nn.activation_functions = self.activation_functions[:]
+        copy_nn.neurons = self.neurons.copy()
+        copy_nn.weights = self.weights.copy()
+        return copy_nn
 
 
 if __name__ == '__main__':

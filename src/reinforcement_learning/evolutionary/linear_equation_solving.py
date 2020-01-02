@@ -16,6 +16,8 @@ MIN_GENE_VALUE = 0
 MAX_GENE_VALUE = 40
 MUTATION_RATE = 0.01
 
+random.seed(a=100, version=2)
+
 
 class Equation:
 
@@ -58,8 +60,12 @@ def evaluate(population: Population, equation: Equation) -> List[FitnessScore]:
 
 def create_new_population(fitness_scores: List[FitnessScore], population: Population) -> Population:
     # SELECT
+    # select random chromosomes. Chromosomes with better (lower) fitness have higher chance to be picked
     sum_fitness = sum(fitness_scores)
-    weights = [score/sum_fitness for score in fitness_scores]
+    np_fs = np.array(fitness_scores)
+    inverted_fitness_scores = sum_fitness - np_fs
+    sum_inverted_fs = np.sum(inverted_fitness_scores)
+    weights = inverted_fitness_scores/sum_inverted_fs
     indices = np.random.choice(len(fitness_scores), len(fitness_scores), p=weights)
     # len(parents) = len(population)
     parents = [population[i] for i in indices]
@@ -114,4 +120,5 @@ def solve_equation(equation: Equation):
 
 if __name__ == '__main__':
     eq = Equation(57, (1, -2, 3, 1, 2, 7, 3))
+    eq = Equation(10, (2, 2))
     possible_solutions = solve_equation(eq)
