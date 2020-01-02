@@ -48,14 +48,12 @@ FitnessScore = int
 MIN_GENE_VALUE = 0
 MAX_GENE_VALUE = 10
 MUTATION_RATE_CHROMOSOME = 0.3
-MUTATION_RATE_GENE = 0.1
-MUTATION_DELTA_GENE = 0.1
-
-ACCEPTING_FITNESS_EPSILON = 0.01
+MUTATION_RATE_GENE = 0.3
+MUTATION_DELTA_GENE = 20
 
 random.seed(100)
 
-population_size = 5
+population_size = 20
 #
 plt_weights_history_x = [[] for _ in range(population_size)]
 plt_weights_history_y = [[] for _ in range(population_size)]
@@ -124,7 +122,7 @@ def create_new_population(fitness_scores: List[FitnessScore], population: Popula
         indices = np.random.choice(len(fitness_scores), len(fitness_scores))
     else:
         weights = inverted_fitness_scores / sum_inverted_fs
-        indices = np.random.choice(len(fitness_scores), len(fitness_scores), p=weights)
+        indices = np.random.choice(len(fitness_scores), 3*len(fitness_scores)//4, p=weights)
     # len(parents) = len(population)
     parents = [population[i].copy() for i in indices]
 
@@ -151,7 +149,7 @@ def mutate_nn(nn: Chromosome) -> None:
     for i in range(nn.weights[0].shape[0]):
         if random.random() < MUTATION_RATE_GENE:
             # += instead of = maybe
-            update_value = random.randint(-10, 10)
+            update_value = random.randint(-MUTATION_DELTA_GENE, MUTATION_DELTA_GENE)
             mutation_value = nn.weights[0][i][0] + update_value
             nn.weights[0][i][0] = mutation_value
 
@@ -162,7 +160,7 @@ def solve_equation(equation: Equation):
     avg_fitness = sum(fitness_scores) / len(population)
     generation = 0
     solutions = []
-    while len(solutions) < 27:
+    while len(solutions) < 10:
         population = create_new_population(fitness_scores, population, equation.num_coefficients())
         fitness_scores = evaluate(population, equation)
         avg_fitness = sum(fitness_scores)/len(population)
@@ -178,9 +176,8 @@ def solve_equation(equation: Equation):
         if generation % 1000 == 0:
             print(f"{generation}: avg_fitness={avg_fitness}, num_solutions={len(solutions)}")
         fitness_scores_np = np.array(fitness_scores)
-        x = np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]
-        if any(np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]):
-            indices = np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]
+        if any(np.where(fitness_scores_np == 0)[0]):
+            indices = np.where(fitness_scores_np == 0)[0]
             s = list(np.array(population)[indices])
             for solution in s:
                 variables = list(solution.weights[0].reshape(equation.num_coefficients()))

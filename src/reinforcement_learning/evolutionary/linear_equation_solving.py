@@ -120,5 +120,5 @@ def solve_equation(equation: Equation):
 
 if __name__ == '__main__':
     eq = Equation(57, (1, -2, 3, 1, 2, 7, 3))
-    eq = Equation(10, (2, 2))
+    eq = Equation(57, (2, 4, 2, 9, -2))
     possible_solutions = solve_equation(eq)
