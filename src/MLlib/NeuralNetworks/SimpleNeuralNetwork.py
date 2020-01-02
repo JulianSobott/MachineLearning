@@ -39,10 +39,11 @@ class SimpleNeuralNetwork:
         return self.neurons[-1]
 
     def copy(self):
+        import copy
         copy_nn = SimpleNeuralNetwork(self.layers[:], self.activation_functions[:])
         copy_nn.activation_functions = self.activation_functions[:]
-        copy_nn.neurons = self.neurons.copy()
-        copy_nn.weights = self.weights.copy()
+        copy_nn.neurons = copy.deepcopy(self.neurons)
+        copy_nn.weights = copy.deepcopy(self.weights)
         return copy_nn
 
 

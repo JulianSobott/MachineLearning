@@ -138,8 +138,8 @@ def mutate_nn(nn: Chromosome) -> None:
     for i in range(nn.weights[0].shape[0]):
         if random.random() < MUTATION_RATE_GENE:
             # += instead of = maybe
-            mutation_value = min(1, max(0, nn.weights[0][i][0] + random.uniform(-MUTATION_DELTA_GENE,
-                                                                                MUTATION_DELTA_GENE)))
+            update_value = random.uniform(-MUTATION_DELTA_GENE, MUTATION_DELTA_GENE)
+            mutation_value = min(1, max(0, nn.weights[0][i][0] + update_value))
             nn.weights[0][i][0] = mutation_value
 
 
@@ -150,13 +150,13 @@ def solve_equation(equation: Equation):
     avg_fitness = sum(fitness_scores) / len(population)
     generation = 0
     solutions = []
-    while len(solutions) < 10:
+    while len(solutions) < 15:
         population = create_new_population(fitness_scores, population, equation.num_coefficients())
         fitness_scores = evaluate(population, equation)
         avg_fitness = sum(fitness_scores)/len(population)
 
         # debug plt
-        if generation < 16:
+        if 1 < generation:
             for i, p in enumerate(population):
                 plt_weights_history_x[i].append(len(plt_weights_history_x[i]))
                 plt_weights_history_y[i].append(p.weights[0][1][0])
@@ -178,7 +178,7 @@ def solve_equation(equation: Equation):
     print(f"{generation}: avg fitness: {avg_fitness}")
     print(f"Possible solutions for equation: {equation}")
     for solution in solutions:
-        print(f"{solution.weights[0].reshape(2) * equation._norm_factor}")
+        print(f"{solution.weights[0].reshape(3) * equation._norm_factor}")
 
     # plt
     for weight_x, weight_y in zip(plt_weights_history_x, plt_weights_history_y):
@@ -188,5 +188,5 @@ def solve_equation(equation: Equation):
 
 
 if __name__ == '__main__':
-    eq = Equation(10, (2, 2))
+    eq = Equation(10, (2, 4, 2))
     possible_solutions = solve_equation(eq)
