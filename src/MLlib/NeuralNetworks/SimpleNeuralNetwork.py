@@ -11,7 +11,7 @@ public classes
 
 
 """
-from typing import List
+from typing import List, Optional, Tuple
 import numpy as np
 
 from MLlib.NeuralNetworks.activation_functions import reLu
@@ -19,13 +19,20 @@ from MLlib.NeuralNetworks.activation_functions import reLu
 
 class SimpleNeuralNetwork:
 
-    def __init__(self, layers: List[int], activation_functions=None):
+    def __init__(self, layers: List[int], activation_functions=None, weights_min_max: Optional[Tuple[int, int]] = None):
         np.random.seed(100)
         self.layers = layers
         self.neurons = [np.zeros(size) for size in self.layers]
-        self.weights = [np.random.rand(in_layer, out_layer)
-                        for in_layer, out_layer in zip(self.layers[:-1], self.layers[1:])
-                        ]
+        if weights_min_max:
+            # integer weights in range [weights_min_max[0], weights_min_max[1]]
+            self.weights = [np.random.randint(weights_min_max[0], weights_min_max[1], size=(in_layer, out_layer))
+                            for in_layer, out_layer in zip(self.layers[:-1], self.layers[1:])
+                            ]
+        else:
+            # float weights in range [0, 1]
+            self.weights = [np.random.rand(in_layer, out_layer)
+                            for in_layer, out_layer in zip(self.layers[:-1], self.layers[1:])
+                            ]
         self.activation_functions = [None, *activation_functions] if activation_functions else \
             [reLu for _ in self.layers]
 
