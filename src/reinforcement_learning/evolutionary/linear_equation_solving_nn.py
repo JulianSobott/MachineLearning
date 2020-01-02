@@ -25,6 +25,12 @@ input_values: coefficients
 output: solution
 
 activation function out: linear
+
+TODO
+----
+
+- Write Genetic algorithm for hyper parameters
+- Replace some chromosomes with new random ones
 """
 from typing import List
 import random
@@ -40,17 +46,21 @@ Population = List[Chromosome]
 FitnessScore = int
 
 MIN_GENE_VALUE = 0
-MAX_GENE_VALUE = 40
+MAX_GENE_VALUE = 10
 MUTATION_RATE_CHROMOSOME = 0.3
-MUTATION_RATE_GENE = 0.5
-MUTATION_DELTA_GENE = 0.5
+MUTATION_RATE_GENE = 0.1
+MUTATION_DELTA_GENE = 0.1
 
 ACCEPTING_FITNESS_EPSILON = 0.01
 
 random.seed(100)
+
+population_size = 5
 #
-plt_weights_history_x = [[] for _ in range(10)]
-plt_weights_history_y = [[] for _ in range(10)]
+plt_weights_history_x = [[] for _ in range(population_size)]
+plt_weights_history_y = [[] for _ in range(population_size)]
+plt_fitness_scores = [[] for _ in range(population_size)]
+plt_avg_fitness = []
 
 
 class Equation:
@@ -92,7 +102,7 @@ def init_population(size: int, num_genes: int) -> Population:
 
 
 def random_chromosome(num_genes: int):
-    return SimpleNeuralNetwork([num_genes, 1], [af.linear], weights_min_max=(0, 10))
+    return SimpleNeuralNetwork([num_genes, 1], [af.linear], weights_min_max=(MIN_GENE_VALUE, MAX_GENE_VALUE))
 
 
 def evaluate(population: Population, equation: Equation) -> List[FitnessScore]:
@@ -110,8 +120,11 @@ def create_new_population(fitness_scores: List[FitnessScore], population: Popula
     np_fs = np.array(fitness_scores)
     inverted_fitness_scores = sum_fitness - np_fs
     sum_inverted_fs = np.sum(inverted_fitness_scores)
-    weights = inverted_fitness_scores / sum_inverted_fs
-    indices = np.random.choice(len(fitness_scores), len(fitness_scores), p=weights)
+    if sum_inverted_fs == 0:
+        indices = np.random.choice(len(fitness_scores), len(fitness_scores))
+    else:
+        weights = inverted_fitness_scores / sum_inverted_fs
+        indices = np.random.choice(len(fitness_scores), len(fitness_scores), p=weights)
     # len(parents) = len(population)
     parents = [population[i].copy() for i in indices]
 
@@ -144,49 +157,57 @@ def mutate_nn(nn: Chromosome) -> None:
 
 
 def solve_equation(equation: Equation):
-    population_size = 10
     population = init_population(population_size, equation.num_coefficients())
     fitness_scores: list = evaluate(population, equation)
     avg_fitness = sum(fitness_scores) / len(population)
     generation = 0
     solutions = []
-    while len(solutions) < 15:
+    while len(solutions) < 27:
         population = create_new_population(fitness_scores, population, equation.num_coefficients())
         fitness_scores = evaluate(population, equation)
         avg_fitness = sum(fitness_scores)/len(population)
 
         # debug plt
-        if 1 < generation:
-            for i, p in enumerate(population):
-                plt_weights_history_x[i].append(len(plt_weights_history_x[i]))
-                plt_weights_history_y[i].append(p.weights[0][1][0])
+        for i, p in enumerate(population):
+            plt_weights_history_x[i].append(len(plt_weights_history_x[i]))
+            plt_weights_history_y[i].append(p.weights[0][1][0])
+        for i, f in enumerate(fitness_scores):
+            plt_fitness_scores[i].append(f)
+        plt_avg_fitness.append(avg_fitness)
+
         if generation % 1000 == 0:
             print(f"{generation}: avg_fitness={avg_fitness}, num_solutions={len(solutions)}")
-            print(f"Current solution: {equation.repr_possible_solution(population[0])}")
         fitness_scores_np = np.array(fitness_scores)
         x = np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]
         if any(np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]):
             indices = np.where(fitness_scores_np < ACCEPTING_FITNESS_EPSILON)[0]
-            s = np.array(population)[indices]
-            if len(solutions) == 0:
-                solutions = s
-            else:
-                solutions = np.append(solutions, s, axis=0)
-            print("added solutions " + str(len(s)))
+            s = list(np.array(population)[indices])
+            for solution in s:
+                variables = list(solution.weights[0].reshape(equation.num_coefficients()))
+                if variables not in solutions:
+                    solutions.append(variables)
         generation += 1
     print(f"FINISHED in generation: {generation}")
     print(f"{generation}: avg fitness: {avg_fitness}")
     print(f"Possible solutions for equation: {equation}")
     for solution in solutions:
-        print(f"{solution.weights[0].reshape(3)}")
+        print(f"{solution}")
 
     # plt
+    plt.title("Weights")
     for weight_x, weight_y in zip(plt_weights_history_x, plt_weights_history_y):
         plt.plot(weight_x, weight_y)
+    plt.show()
+    plt.title("all fitness scores")
+    for fitness in plt_fitness_scores:
+        plt.plot(np.arange(generation), fitness)
+    plt.show()
+    plt.title("avg fitness score")
+    plt.plot(np.arange(generation), plt_avg_fitness)
     plt.show()
     return solutions
 
 
 if __name__ == '__main__':
-    eq = Equation(10, (2, 4, 2))
+    eq = Equation(57, (2, 4, 2, 9, -2))
     possible_solutions = solve_equation(eq)
