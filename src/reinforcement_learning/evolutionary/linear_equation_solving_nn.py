@@ -39,21 +39,91 @@ from string import ascii_lowercase
 from matplotlib import pyplot as plt
 
 
-from MLlib import SimpleNeuralNetwork, activation_functions as af
+from MLlib import SimpleNeuralNetwork, activation_functions as af, algorithms
+
+MIN_GENE_VALUE = 0
+MAX_GENE_VALUE = 10
+
+
+class LinearEquationSolverSystem(algorithms.evolutionary.EvolutionaryAlgorithm):
+
+    def __init__(self, equation: 'Equation'):
+        super().__init__()
+        self.equation = equation
+        self.solutions = []
+
+    def new_agent(self):
+        return SimpleNeuralNetwork([self.equation.num_coefficients(), 1],
+                                   [af.linear],
+                                   weights_min_max=(MIN_GENE_VALUE, MAX_GENE_VALUE))
+
+    def run_epoch(self):
+        pass
+
+    def end_epoch(self):
+        if self.epoch % 1000 == 0:
+            avg_fitness = sum(self.fitness_scores) / len(self.population)
+            print(f"{self.epoch}: avg_fitness={avg_fitness}, num_solutions={len(self.solutions)}")
+        fitness_scores_np = np.array(self.fitness_scores)
+        if any(np.where(fitness_scores_np == 0)[0]):
+            indices = np.where(fitness_scores_np == 0)[0]
+            s = list(np.array(self.population)[indices])
+            for solution in s:
+                variables = list(solution.weights[0].reshape(self.equation.num_coefficients()))
+                if variables not in self.solutions:
+                    self.solutions.append(variables)
+
+    def evaluate_agent_fitness(self, agent: SimpleNeuralNetwork):
+        return abs(self.equation.calc_diff(agent))
+
+    def create_new_population(self):
+        # SELECT
+        # Select 'random' chromosomes. better chromosomes have higher chance
+        sum_fitness = sum(self.fitness_scores)
+        np_fs = np.array(self.fitness_scores)
+        inverted_fitness_scores = sum_fitness - np_fs
+        sum_inverted_fs = np.sum(inverted_fitness_scores)
+        if sum_inverted_fs == 0:
+            indices = np.random.choice(len(self.fitness_scores), len(self.fitness_scores))
+        else:
+            weights = inverted_fitness_scores / sum_inverted_fs
+            indices = np.random.choice(len(self.fitness_scores), 3 * len(self.fitness_scores) // 4, p=weights)
+        # len(parents) = len(population)
+        parents = [self.population[i].copy() for i in indices]
+
+        new_population = parents
+
+        # MUTATION
+        for child in new_population:
+            if random.random() < MUTATION_RATE_CHROMOSOME:
+                mutate_nn(child)
+
+        # FILL to original size
+        new_population += [self.new_agent() for _ in range(0, len(self.population) - len(new_population))]
+        self.population = new_population
+
+    def on_finish(self):
+        print(f"FINISHED in generation: {self.epoch}")
+        print(f"Possible solutions for equation: {self.equation}")
+        for solution in self.solutions:
+            print(f"{solution}")
+
+    def has_run_ended(self):
+        return len(self.solutions) >= 10
+
 
 Chromosome = SimpleNeuralNetwork
 Population = List[Chromosome]
 FitnessScore = int
 
-MIN_GENE_VALUE = 0
-MAX_GENE_VALUE = 10
+
 MUTATION_RATE_CHROMOSOME = 0.3
 MUTATION_RATE_GENE = 0.3
 MUTATION_DELTA_GENE = 20
 
 random.seed(100)
 
-population_size = 20
+population_size = 10
 #
 plt_weights_history_x = [[] for _ in range(population_size)]
 plt_weights_history_y = [[] for _ in range(population_size)]
@@ -207,4 +277,6 @@ def solve_equation(equation: Equation):
 
 if __name__ == '__main__':
     eq = Equation(57, (2, 4, 2, 9, -2))
+    system = LinearEquationSolverSystem(eq)
+    system.run()
     possible_solutions = solve_equation(eq)
