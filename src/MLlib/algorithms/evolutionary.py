@@ -12,13 +12,21 @@ public classes
     :members:
 """
 import abc
+import random
+
+import numpy as np
 from typing import List, Union, Optional, Tuple
 
 __all__ = ['Chromosome', 'Population', 'FitnessScore', 'EvolutionaryAlgorithm']
 
 
 class Chromosome(abc.ABC):
-    pass
+
+    def copy(self):
+        raise NotImplementedError
+
+    def mutate(self, mutation_rate_gene, mutation_deltas_gene):
+        raise NotImplementedError
 
 
 Population = List[Chromosome]
@@ -72,7 +80,36 @@ class EvolutionaryAlgorithm(abc.ABC):
         raise NotImplementedError
 
     def create_new_population(self):
-        raise NotImplementedError
+        selected_parents = self.select_parents()
+        new_population = self.crossover(selected_parents)
+        new_population = self.mutate_population(new_population)
+        new_population += [self.new_agent() for _ in range(0, len(self.population) - len(new_population))]
+        self.population = new_population
+
+    def select_parents(self) -> Population:
+        parent_population_ratio = 3/4
+        sum_fitness = sum(self.fitness_scores)
+        np_fs = np.array(self.fitness_scores)
+        inverted_fitness_scores = sum_fitness - np_fs
+        sum_inverted_fs = np.sum(inverted_fitness_scores)
+        if sum_inverted_fs == 0:
+            indices = np.random.choice(len(self.fitness_scores), len(self.fitness_scores))
+        else:
+            weights = inverted_fitness_scores / sum_inverted_fs
+            indices = np.random.choice(len(self.fitness_scores),
+                                       int(parent_population_ratio * len(self.fitness_scores)),
+                                       p=weights)
+
+        return [self.population[i].copy() for i in indices]
+
+    def crossover(self, parents: Population):
+        return parents  # TODO
+
+    def mutate_population(self, population: Population):
+        for child in population:
+            if random.random() < self.mutation_rate_chromosome:
+                child.mutate(self.mutation_rate_gene, self.mutation_deltas_gene)
+        return population
 
     def run(self):
         self.init_population()
