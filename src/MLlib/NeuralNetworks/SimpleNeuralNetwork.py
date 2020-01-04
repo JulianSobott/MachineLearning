@@ -19,8 +19,12 @@ from MLlib.NeuralNetworks.activation_functions import reLu
 
 class SimpleNeuralNetwork:
 
-    def __init__(self, layers: List[int], activation_functions=None, weights_min_max: Optional[Tuple[int, int]] = None):
-        np.random.seed(100)
+    def __init__(self,
+                 layers: List[int],
+                 activation_functions=None,
+                 weights_min_max: Optional[Tuple[int, int]] = None,
+                 seed: Optional[int] = None):
+        np.random.seed(seed)
         self.layers = layers
         self.neurons = [np.zeros(size) for size in self.layers]
         if weights_min_max:

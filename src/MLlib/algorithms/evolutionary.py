@@ -76,7 +76,7 @@ class EvolutionaryAlgorithm(abc.ABC):
         for agent in self.population:
             self.fitness_scores.append(self.evaluate_agent_fitness(agent))
 
-    def evaluate_agent_fitness(self, agent: Chromosome):
+    def evaluate_agent_fitness(self, agent: Chromosome) -> int:
         raise NotImplementedError
 
     def create_new_population(self):
