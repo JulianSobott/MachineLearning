@@ -114,10 +114,10 @@ class EvolutionaryAlgorithm(abc.ABC):
     def run(self):
         self.init_population()
         while not self.has_run_ended():
+            self.fitness_scores = []
             self.run_epoch()
             self._end_epoch()
             self.create_new_population()
-            self.fitness_scores = []
         self.on_finish()
 
     def on_finish(self):
